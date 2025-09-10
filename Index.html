@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BISE Custom Helper - Assistant Douane Cameroun</title>
+    <style>
+        :root {
+            --primary-color: #2c5234;
+            --secondary-color: #1a3020;
+            --accent-color: #d4af37;
+            --success-color: #27ae60;
+            --error-color: #e74c3c;
+            --warning-color: #f39c12;
+            --light-bg: #f8f9fa;
+            --white: #ffffff;
+            --text-dark: #2c3e50;
+            --text-light: #7f8c8d;
+            --border-color: #dee2e6;
+            --shadow: 0 4px 20px rgba(0,0,0,0.1);
+            --shadow-hover: 0 6px 30px rgba(0,0,0,0.15);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            min-height: 100vh; line-height: 1.6; color: var(--text-dark);
+        }
+        .login-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .login-box {
+            background: var(--white); padding: 40px 30px; border-radius: 20px; box-shadow: var(--shadow-hover);
+            width: 100%; max-width: 400px; text-align: center; position: relative; overflow: hidden;
+        }
+        .login-box::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color), var(--primary-color));
+        }
+        .login-header { margin-bottom: 30px; }
+        .login-logo {
+            font-size: 48px; margin-bottom: 15px;
+            background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .login-title { font-size: 24px; font-weight: 700; color: var(--primary-color); margin-bottom: 5px; }
+        .login-subtitle { color: var(--text-light); font-size: 14px; }
+        .login-form { display: flex; flex-direction: column; gap: 20px; }
+        .form-group { text-align: left; margin-bottom: 16px; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--primary-color); font-size: 14px; }
+        .form-input, select.form-input {
+            width: 100%; padding: 15px; border: 2px solid var(--border-color); border-radius: 10px;
+            font-size: 16px; transition: all 0.3s ease; background: var(--white);
+        }
+        .form-input:focus, select.form-input:focus {
+            outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(44, 82, 52, 0.1);
+        }
+        .login-btn, .btn {
+            width: 100%; padding: 15px; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--white); border: none; border-radius: 12px; font-size: 16px; font-weight: 600;
+            cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(44, 82, 52, 0.3); display: flex; align-items: center;
+            justify-content: center; gap: 8px;
+        }
+        .login-btn:hover, .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(44, 82, 52, 0.4); }
+        .login-btn:disabled, .btn:disabled {
+            background: var(--text-light); cursor: not-allowed; transform: none; box-shadow: none;
+        }
+        .error-message {
+            background: #fee; color: var(--error-color); padding: 12px; border-radius: 8px;
+            border: 1px solid #fcc; font-size: 14px; margin-bottom: 15px; display: none;
+        }
+        .security-info {
+            margin-top: 25px; padding: 15px; background: var(--light-bg);
+            border-radius: 10px; font-size: 12px; color: var(--text-light);
+        }
+        .app-container {
+            max-width: 420px; margin: 0 auto; background: var(--white); min-height: 100vh;
+            box-shadow: var(--shadow); position: relative; display: none;
+        }
+        .app-header {
+            background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+            color: var(--white); padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100;
+            box-shadow: var(--shadow); display: flex; justify-content: space-between; align-items: center;
+        }
+        .app-header h1 { font-size: 22px; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+        .app-header .subtitle { font-size: 14px; opacity: 0.9; font-weight: 400; }
+        .logout-btn {
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+            color: var(--white); padding: 8px 12px; border-radius: 8px; font-size: 12px;
+            cursor: pointer; transition: all 0.3s ease;
+        }
+        .logout-btn:hover { background: rgba(255,255,255,0.3); }
+        .nav-tabs {
+            display: flex; background: var(--white); border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 80px; z-index: 90;
+        }
+        .nav-tab {
+            flex: 1; padding: 15px 8px; background: none; border: none; cursor: pointer;
+            font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+            transition: all 0.3s ease; color: var(--text-light); border-bottom: 3px solid transparent;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+        }
+        .nav-tab.active {
+            color: var(--primary-color); border-bottom-color: var(--primary-color);
+            background: rgba(44, 82, 52, 0.05);
+        }
+        .nav-tab:hover:not(.active) { color: var(--primary-color); background: rgba(44, 82, 52, 0.03); }
+        .nav-tab-icon { font-size: 18px; }
+        .content { padding: 20px; padding-bottom: 100px; min-height: calc(100vh - 140px); }
+        .hidden { display: none !important; }
+        .card {
+            background: var(--white); border-radius: 15px; padding: 20px; margin-bottom: 20px;
+            box-shadow: var(--shadow); border: 1px solid rgba(44, 82, 52, 0.1); transition: box-shadow 0.3s ease;
+        }
+        .card:hover { box-shadow: var(--shadow-hover); }
+        .card-title {
+            color: var(--secondary-color); font-size: 18px; font-weight: 600; margin-bottom: 15px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .rates-card {
+            background: linear-gradient(135deg, rgba(44, 82, 52, 0.1), rgba(26, 48, 32, 0.05));
+            border: 2px solid rgba(44, 82, 52, 0.2); border-radius: 15px; padding: 16px; margin-bottom: 20px;
+        }
+        .rates-title { color: var(--secondary-color); font-weight: 600; margin-bottom: 12px; text-align: center; font-size: 16px; }
+        .rates-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .rate-item {
+            background: var(--white); padding: 10px; border-radius: 8px; display: flex;
+            justify-content: space-between; align-items: center; font-size: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .rate-currency { font-weight: 600; color: var(--secondary-color); }
+        .rate-value { font-family: monospace; color: var(--primary-color); font-weight: 600; }
+        .search-box { position: relative; margin-bottom: 20px; }
+        .search-input {
+            width: 100%; padding: 12px 15px 12px 45px; border: 2px solid var(--border-color);
+            border-radius: 25px; font-size: 16px; background: var(--white);
+        }
+        .search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-light); }
+        .code-item {
+            background: var(--white); border: 2px solid var(--border-color); border-radius: 12px;
+            padding: 16px; margin-bottom: 12px; cursor: pointer; transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        .code-item:hover {
+            border-color: var(--primary-color); box-shadow: var(--shadow); transform: translateY(-1px);
+        }
+        .code-number {
+            font-family: 'Courier New', monospace; font-size: 18px; font-weight: 700;
+            color: var(--secondary-color); margin-bottom: 6px;
+        }
+        .code-description { color: var(--text-dark); font-size: 14px; line-height: 1.4; margin-bottom: 8px; }
+        .code-rate {
+            background: linear-gradient(135deg, rgba(44, 82, 52, 0.1), rgba(26, 48, 32, 0.05));
+            color: var(--secondary-color); padding: 4px 10px; border-radius: 15px;
+            font-size: 12px; font-weight: 600; display: inline-block;
+        }
+        .result-card {
+            background: linear-gradient(135deg, rgba(39, 174, 96, 0.1), rgba(46, 204, 113, 0.05));
+            border: 2px solid rgba(39, 174, 96, 0.3); border-radius: 15px; padding: 20px; margin-top: 20px;
+        }
+        .result-title { color: var(--success-color); font-weight: 700; margin-bottom: 15px; text-align: center; font-size: 18px; }
+        .result-item {
+            display: flex; justify-content: space-between; align-items: center; padding: 8px 0;
+            font-size: 15px; border-bottom: 1px solid rgba(39, 174, 96, 0.1);
+        }
+        .result-item:last-child { border-bottom: none; }
+        .result-item.total {
+            font-weight: 700; font-size: 18px; padding-top: 12px; margin-top: 8px;
+            border-top: 2px solid rgba(39, 174, 96, 0.3); color: var(--success-color);
+        }
+        .result-value { font-weight: 600; font-family: monospace; }
+        .notification {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--success-color);
+            color: var(--white); padding: 12px 20px; border-radius: 8px; font-weight: 600;
+            z-index: 1000; box-shadow: var(--shadow); opacity: 0; transition: opacity 0.3s ease;
+        }
+        .notification.show { opacity: 1; }
+        .notification.error { background: var(--error-color); }
+        .session-timer {
+            position: fixed; bottom: 20px; right: 20px; background: rgba(0,0,0,0.8); color: white;
+            padding: 8px 12px; border-radius: 20px; font-size: 12px; z-index: 1000; display: none;
+        }
+        @media (max-width: 480px) {
+            .app-container { margin: 0; border-radius: 0; }
+            .login-box { margin: 10px; padding: 30px 20px; }
+            .form-row { grid-template-columns: 1fr; }
+            .rates-grid { grid-template-columns: 1fr; }
+        }
+        .pulse { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div id="loginPage" class="login-container">
+        <div class="login-box fade-in">
+            <div class="login-header">
+                <div class="login-logo">🇨🇲</div>
+                <h1 class="login-title">BISE Custom Helper</h1>
+                <p class="login-subtitle">Assistant Professionnel Douane Cameroun</p>
+            </div>
+            <div id="errorMessage" class="error-message"></div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label class="form-label">👤 Nom d'utilisateur</label>
+                    <input type="text" id="username" class="form-input" placeholder="Votre nom d'utilisateur" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">🔑 Mot de passe</label>
+                    <input type="password" id="password" class="form-input" placeholder="Votre mot de passe" required>
+                </div>
+                <button type="submit" class="login-btn">🔐 SE CONNECTER</button>
+            </form>
+            <div class="security-info">
+                <strong>🛡️ Sécurité renforcée</strong><br>• Session automatique (30 min)<br>• Protection anti-intrusion<br>• Données chiffrées localement
+            </div>
+        </div>
+    </div>
+
+    <div id="appContainer" class="app-container">
+        <header class="app-header">
+            <div>
+                <h1>🇨🇲 BISE Custom Helper</h1>
+                <div class="subtitle">CAMCIS • CEMAC • Version Pro Sécurisée</div>
+            </div>
+            <button id="logoutBtn" class="logout-btn">🔓 Déconnexion</button>
+        </header>
+
+        <nav class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('calculator')">
+                <span class="nav-tab-icon">💰</span><span>Calcul</span>
+            </button>
+            <button class="nav-tab" onclick="showTab('search')">
+                <span class="nav-tab-icon">🔍</span><span>Codes</span>
+            </button>
+            <button class="nav-tab" onclick="showTab('history')">
+                <span class="nav-tab-icon">📊</span><span>Historique</span>
+            </button>
+            <button class="nav-tab" onclick="showTab('tools')">
+                <span class="nav-tab-icon">🛠️</span><span>Outils</span>
+            </button>
+            <button class="nav-tab" id="adminTab" onclick="showAdminTab()" style="display: none;">
+                <span class="nav-tab-icon">👑</span><span>Admin</span>
+            </button>
+        </nav>
+
+        <div id="calculator" class="content">
+            <div class="rates-card">
+                <div class="rates-title">💱 Taux de Change BEAC</div>
+                <div class="rates-grid">
+                    <div class="rate-item"><span class="rate-currency">USD</span><span class="rate-value">590 F</span></div>
+                    <div class="rate-item"><span class="rate-currency">EUR</span><span class="rate-value">655 F</span></div>
+                    <div class="rate-item"><span class="rate-currency">GBP</span><span class="rate-value">740 F</span></div>
+                    <div class="rate-item"><span class="rate-currency">CNY</span><span class="rate-value">82 F</span></div>
+                </div>
+            </div>
+            <div class="card">
+                <h2 class="card-title"><span>📋</span>Nouvelle Déclaration CAMCIS</h2>
+                <form id="calculatorForm">
+                    <div class="form-group">
+                        <label class="form-label">Désignation de la marchandise *</label>
+                        <input type="text" id="designation" class="form-input" placeholder="Ex: Téléphones portables Samsung Galaxy" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Code SH (Système Harmonisé) *</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="codeSH" class="form-input" placeholder="Ex: 8517.12.00" required style="flex: 1;">
+                            <button type="button" class="btn" onclick="showTabByName('search')" style="width: auto; padding: 12px;">🔍</button>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Valeur *</label>
+                            <input type="number" id="valeur" class="form-input" placeholder="5000" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Devise</label>
+                            <select id="devise" class="form-input">
+                                <option value="USD">USD - Dollar US</option>
+                                <option value="EUR">EUR - Euro</option>
+                                <option value="GBP">GBP - Livre Sterling</option>
+                                <option value="FCFA">FCFA - Franc CFA</option>
+                                <option value="CNY">CNY - Yuan Chinois</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Quantité</label>
+                            <input type="number" id="quantite" class="form-input" placeholder="100" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Poids Net (kg)</label>
+                            <input type="number" id="poids" class="form-input" placeholder="25.5" step="0.1">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Pays d'origine</label>
+                        <select id="origine" class="form-input">
+                            <option value="">Sélectionner...</option>
+                            <option value="Chine">🇨🇳 Chine</option>
+                            <option value="France">🇫🇷 France</option>
+                            <option value="Allemagne">🇩🇪 Allemagne</option>
+                            <option value="Italie">🇮🇹 Italie</option>
+                            <option value="USA">🇺🇸 États-Unis</option>
+                            <option value="Japon">🇯🇵 Japon</option>
+                            <option value="Inde">🇮🇳 Inde</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn pulse"><span>💰</span>Calculer Droits & Taxes</button>
+                </form>
+                <div id="results" class="hidden">
+                    <div class="result-card">
+                        <div class="result-title">💸 Résultat CAMCIS</div>
+                        <div class="result-item"><span>Valeur en FCFA:</span><span class="result-value" id="valeurFCFA">-</span></div>
+                        <div class="result-item"><span>Droit de Douane:</span><span class="result-value" id="droitDouane">-</span></div>
+                        <div class="result-item"><span>TVA (19,25%):</span><span class="result-value" id="tva">-</span></div>
+                        <div class="result-item"><span>Autres taxes:</span><span class="result-value" id="autresTaxes">-</span></div>
+                        <div class="result-item total"><span>TOTAL À PAYER:</span><span class="result-value" id="total">-</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="search" class="content hidden">
+            <div class="card">
+                <h2 class="card-title"><span>🔍</span>Codes SH Cameroun</h2>
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Rechercher un code ou produit..." oninput="filterCodes()">
+                </div>
+            </div>
+            <div id="searchResults">
+                <div class="code-item" onclick="selectCode('8703.23.00')">
+                    <div class="code-number">8703.23.00</div>
+                    <div class="code-description">Voitures particulières à moteur à piston alternatif, cylindrée 1000-1500cm³</div>
+                    <span class="code-rate">DD: 20% • TVA: 19,25%</span>
+                </div>
+                <div class="code-item" onclick="selectCode('8517.12.00')">
+                    <div class="code-number">8517.12.00</div>
+                    <div class="code-description">Téléphones portables et autres réseaux cellulaires</div>
+                    <span class="code-rate">DD: 10% • TVA: 19,25%</span>
+                </div>
+                <div class="code-item" onclick="selectCode('8471.30.00')">
+                    <div class="code-number">8471.30.00</div>
+                    <div class="code-description">Machines de traitement de l'information portatives ≤ 10 kg</div>
+                    <span class="code-rate">DD: 5% • TVA: 19,25%</span>
+                </div>
+                <div class="code-item" onclick="selectCode('1001.99.00')">
+                    <div class="code-number">1001.99.00</div>
+                    <div class="code-description">Froment (blé) dur et épeautre, autres</div>
+                    <span class="code-rate">DD: 30% • TVA: 19,25%</span>
+                </div>
+                <div class="code-item" onclick="selectCode('0901.11.00')">
+                    <div class="code-number">0901.11.00</div>
+                    <div class="code-description">Café non torréfié, non décaféiné</div>
+                    <span class="code-rate">DD: 10% • TVA: 19,25%</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="history" class="content hidden">
+            <div class="card">
+                <h2 class="card-title"><span>📊</span>Mes Déclarations CAMCIS</h2>
+                <div id="declarationsList">
+                    <div style="text-align: center; padding: 40px; color: var(--text-light);">
+                        <div style="font-size: 48px; margin-bottom: 15px;">📋</div>
+                        <p>Aucune déclaration</p>
+                        <p style="font-size: 14px;">Vos calculs apparaîtront ici automatiquement</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tools" class="content hidden">
+            <div class="card">
+                <h2 class="card-title"><span>🛠️</span>Outils CAMCIS</h2>
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: var(--secondary-color); margin-bottom: 10px;">💱 Convertisseur de Devises</h3>
+                    <div class="form-row">
+                        <input type="number" id="convertAmount" class="form-input" placeholder="Montant">
+                        <select id="convertFrom" class="form-input">
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="GBP">GBP</option>
+                            <option value="CNY">CNY</option>
+                        </select>
+                    </div>
+                    <div style="text-align: center; margin: 10px 0; font-size: 18px; color: var(--primary-color);">
+                        = <span id="convertResult">0</span> FCFA
+                    </div>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: var(--secondary-color); margin-bottom: 10px;">📞 Contacts CAMCIS</h3>
+                    <div style="background: var(--light-bg); padding: 15px; border-radius: 10px; font-size: 14px;">
+                        <div style="margin-bottom: 10px;"><strong>🏛️ Douanes Cameroun:</strong> +237 222 23 40 12</div>
+                        <div style="margin-bottom: 10px;"><strong>🚢 Port Douala:</strong> +237 233 42 26 15</div>
+                        <div style="margin-bottom: 10px;"><strong>✈️ Aéroport Nsimalen:</strong> +237 222 23 34 47</div>
+                        <div><strong>📧 Email:</strong> support.camcis@douanes.cm</div>
+                    </div>
+                </div>
+                <button class="btn" onclick="exportData()"><span>📊</span>Exporter mes données</button>
+            </div>
+        </div>
+
+        <div id="adminModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+            <div style="background: white; padding: 30px; border-radius: 15px; max-width: 400px; text-align: center;">
+                <h3 style="color: var(--error-color); margin-bottom: 15px;">⚠️ Confirmation Admin</h3>
+                <p id="adminModalText" style="margin-bottom: 20px;"></p>
+                <input type="password" id="adminCodeInput" style="width: 100%; padding: 10px; margin-bottom: 20px; border: 2px solid var(--border-color); border-radius: 8px;" placeholder="Code admin">
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="cancelAdminAction()" style="flex: 1; padding: 10px; background: var(--text-light); color: white; border: none; border-radius: 8px;">Annuler</button>
+                    <button onclick="confirmAdminAction()" style="flex: 1; padding: 10px; background: var(--error-color); color: white; border: none; border-radius: 8px;">Confirmer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sessionTimer" class="session-timer"></div>
+    <div id="notification" class="notification"></div>
+
+    <script>
+        const ADMIN_CODE = 'Ekanga98210';
+        let users = [{
+            id: 1, username: 'Ekanga29', password: 'ekangajoachim29', fullName: 'Joachim Ekanga',
+            role: 'super_admin', created: new Date().toISOString(), lastLogin: new Date().toISOString(),
+            active: true, declarations: 0
+        }];
+        let currentUser = null, systemLogs = [], declarations = [], sessionTimer = null;
+        let loginAttempts = 0, lockoutUntil = null, pendingAction = null;
+
+        const EXCHANGE_RATES = { 'USD': 590, 'EUR': 655, 'GBP': 740, 'CNY': 82, 'FCFA': 1 };
+        const CUSTOMS_RATES = {
+            '8703.23.00': { dd: 20 }, '8517.12.00': { dd: 10 }, '8471.30.00': { dd: 5 },
+            '1001.99.00': { dd: 30 }, '0901.11.00': { dd: 10 }
+        };
+        const TVA_RATE = 19.25, SESSION_TIMEOUT = 30 * 60 * 1000;
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (lockoutUntil && Date.now() < lockoutUntil) {
+                showError(`Compte bloqué. Réessayez dans ${Math.ceil((lockoutUntil - Date.now()) / 1000)} secondes.`);
+                return;
+            }
+            
+            const user = users.find(u => u.username === username && u.password === password && u.active);
+            if (user) {
+                loginAttempts = 0; lockoutUntil = null; currentUser = user;
+                user.lastLogin = new Date().toISOString();
+                systemLogs.push({ timestamp: new Date().toISOString(), user: user.username, action: 'LOGIN_SUCCESS', details: 'Connexion réussie' });
+                saveUsers();
+                
+                document.getElementById('loginPage').style.display = 'none';
+                document.getElementById('appContainer').style.display = 'block';
+                if (user.role === 'super_admin') document.getElementById('adminTab').style.display = 'flex';
+                
+                startSession(); loadDeclarations(); updateAdminStats();
+                showNotification('✅ Connexion réussie ! Bienvenue ' + user.fullName);
+            } else {
+                loginAttempts++;
+                systemLogs.push({ timestamp: new Date().toISOString(), user: username, action: 'LOGIN_FAILED', details: 'Identifiants incorrects' });
+                
+                if (loginAttempts >= 3) {
+                    lockoutUntil = Date.now() + 15 * 60 * 1000;
+                    showError('Trop de tentatives échouées. Compte bloqué pendant 15 minutes.');
+                } else {
+                    showError(`Identifiants incorrects. ${3 - loginAttempts} tentative(s) restante(s).`);
+                }
+                document.getElementById('password').value = '';
+            }
+        });
+
+        function saveUsers() {
+            try {
+                localStorage.setItem('bise_users_encrypted', btoa(JSON.stringify(users)));
+                localStorage.setItem('bise_logs_encrypted', btoa(JSON.stringify(systemLogs)));
+            } catch (e) { console.error('Erreur sauvegarde:', e); }
+        }
+
+        function loadUsers() {
+            try {
+                const savedUsers = localStorage.getItem('bise_users_encrypted');
+                const savedLogs = localStorage.getItem('bise_logs_encrypted');
+                if (savedUsers) users = JSON.parse(atob(savedUsers));
+                if (savedLogs) systemLogs = JSON.parse(atob(savedLogs));
+            } catch (e) { console.error('Erreur chargement:', e); }
+        }
+
+        function startSession() {
+            clearTimeout(sessionTimer);
+            sessionTimer = setTimeout(() => { logout(); showNotification('Session expirée', 'error'); }, SESSION_TIMEOUT);
+            updateSessionTimer();
+        }
+
+        function updateSessionTimer() {
+            const timer = document.getElementById('sessionTimer');
+            const remaining = Math.floor((SESSION_TIMEOUT - (Date.now() % SESSION_TIMEOUT)) / 1000);
+            if (remaining > 300) {
+                timer.style.display = 'none';
+            } else {
+                timer.style.display = 'block';
+                const minutes = Math.floor(remaining / 60), seconds = remaining % 60;
+                timer.textContent = `Session: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', logout);
+        function logout() {
+            if (currentUser) {
+                systemLogs.push({ timestamp: new Date().toISOString(), user: currentUser.username, action: 'LOGOUT', details: 'Déconnexion' });
+                saveUsers();
+            }
+            clearTimeout(sessionTimer); currentUser = null;
+            document.getElementById('appContainer').style.display = 'none';
+            document.getElementById('loginPage').style.display = 'flex';
+            document.getElementById('adminTab').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('sessionTimer').style.display = 'none';
+        }
+
+        function loadDeclarations() {
+            try {
+                const saved = localStorage.getItem('bise_declarations_encrypted');
+                if (saved) declarations = JSON.parse(atob(saved));
+            } catch (e) { declarations = []; }
+        }
+
+        function saveDeclarations() {
+            try { localStorage.setItem('bise_declarations_encrypted', btoa(JSON.stringify(declarations))); }
+            catch (e) { console.error('Erreur sauvegarde:', e); }
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.content').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabName).classList.remove('hidden');
+            event.target.classList.add('active');
+            if (tabName === 'history') updateHistory();
+        }
+
+        function showTabByName(tabName) {
+            document.querySelectorAll('.content').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabName).classList.remove('hidden');
+            const tabIndex = { 'calculator': 0, 'search': 1, 'history': 2, 'tools': 3, 'admin': 4 };
+            document.querySelectorAll('.nav-tab')[tabIndex[tabName]].classList.add('active');
+        }
+
+        function showAdminTab() {
+            if (!currentUser || currentUser.role !== 'super_admin') {
+                showNotification('❌ Accès refusé - Admin seulement', 'error');
+                return;
+            }
+            showTab('admin'); updateUsersList(); updateAdminStats();
+        }
+
+        function selectCode(code) {
+            document.getElementById('codeSH').value = code;
+            showTabByName('calculator');
+            showNotification('✅ Code ' + code + ' sélectionné !');
+        }
+
+        function filterCodes() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            document.querySelectorAll('.code-item').forEach(item => {
+                item.style.display = item.textContent.toLowerCase().includes(search) ? 'block' : 'none';
+            });
+        }
+
+        document.getElementById('convertAmount')?.addEventListener('input', updateConversion);
+        document.getElementById('convertFrom')?.addEventListener('change', updateConversion);
+        function updateConversion() {
+            const amount = parseFloat(document.getElementById('convertAmount').value) || 0;
+            const fromCurrency = document.getElementById('convertFrom').value;
+            const result = amount * EXCHANGE_RATES[fromCurrency];
+            document.getElementById('convertResult').textContent = Math.round(result).toLocaleString();
+        }
+
+        document.getElementById('calculatorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const designation = document.getElementById('designation').value;
+            const codeSH = document.getElementById('codeSH').value;
+            const valeur = parseFloat(document.getElementById('valeur').value);
+            const devise = document.getElementById('devise').value;
+            const quantite = parseInt(document.getElementById('quantite').value) || 1;
+            const poids = parseFloat(document.getElementById('poids').value) || 0;
+            const origine = document.getElementById('origine').value;
+            
+            if (!designation || !codeSH || !valeur) {
+                showNotification('⚠️ Veuillez remplir tous les champs obligatoires !', 'error');
+                return;
+            }
+
+            const valeurFCFA = valeur * EXCHANGE_RATES[devise];
+            const ddRate = CUSTOMS_RATES[codeSH]?.dd || 10;
+            const droitDouane = valeurFCFA * ddRate / 100;
+            const tva = (valeurFCFA + droitDouane) * TVA_RATE / 100;
+            const autresTaxes = valeurFCFA * 0.5 / 100;
+            const total = valeurFCFA + droitDouane + tva + autresTaxes;
+
+            document.getElementById('valeurFCFA').textContent = Math.round(valeurFCFA).toLocaleString() + ' FCFA';
+            document.getElementById('droitDouane').textContent = Math.round(droitDouane).toLocaleString() + ' FCFA (' + ddRate + '%)';
+            document.getElementById('tva').textContent = Math.round(tva).toLocaleString() + ' FCFA';
+            document.getElementById('autresTaxes').textContent = Math.round(autresTaxes).toLocaleString() + ' FCFA';
+            document.getElementById('total').textContent = Math.round(total).toLocaleString() + ' FCFA';
+            document.getElementById('results').classList.remove('hidden');
+
+            const declaration = {
+                id: Date.now(), date: new Date().toLocaleDateString('fr-FR'),
+                time: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+                designation, codeSH, valeur: valeur + ' ' + devise, quantite, poids, origine,
+                total: Math.round(total), ddRate, user: currentUser?.username || 'Unknown'
+            };
+
+            declarations.unshift(declaration); saveDeclarations();
+            if (currentUser) { currentUser.declarations++; saveUsers(); }
+            showNotification('✅ Déclaration sauvegardée !');
+            setTimeout(() => { this.reset(); document.getElementById('results').classList.add('hidden'); }, 3000);
+            startSession();
+        });
+
+        document.getElementById('createUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!currentUser || currentUser.role !== 'super_admin') {
+                showNotification('❌ Accès refusé', 'error');
+                return;
+            }
+            
+            const username = document.getElementById('newUsername').value;
+            const password = document.getElementById('newPassword').value;
+            const fullName = document.getElementById('newFullName').value || username;
+            
+            if (users.find(u => u.username === username)) {
+                showNotification('❌ Nom d\'utilisateur existe déjà', 'error');
+                return;
+            }
+            
+            users.push({
+                id: Date.now(), username, password, fullName, role: 'user',
+                created: new Date().toISOString(), lastLogin: null, active: true, declarations: 0
+            });
+            saveUsers();
+            systemLogs.push({ timestamp: new Date().toISOString(), user: currentUser.username, action: 'USER_CREATED', details: `Utilisateur créé: ${username}` });
+            showNotification('✅ Utilisateur créé !');
+            this.reset(); updateUsersList(); updateAdminStats();
+        });
+
+        function updateUsersList() {
+            if (!currentUser || currentUser.role !== 'super_admin') return;
+            const container = document.getElementById('usersList');
+            container.innerHTML = users.map(user => {
+                const isOnline = user.id === currentUser.id;
+                const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('fr-FR') : 'Jamais';
+                return `
+                    <div style="background: var(--light-bg); padding: 15px; border-radius: 10px; margin-bottom: 10px; border-left: 4px solid ${user.role === 'super_admin' ? 'var(--accent-color)' : 'var(--primary-color)'};">
+                        <div><strong>${user.username} ${user.role === 'super_admin' ? '👑' : ''}</strong></div>
+                        <div style="font-size: 12px; color: var(--text-light);">${user.fullName} • ${isOnline ? '🟢 En ligne' : '⚫ Hors ligne'}</div>
+                        <div style="font-size: 12px;">Déclarations: ${user.declarations} • Créé: ${new Date(user.created).toLocaleDateString('fr-FR')}</div>
+                        ${user.role !== 'super_admin' ? `<button onclick="deleteUser(${user.id})" style="margin-top: 5px; padding: 3px 8px; font-size: 10px; background: var(--error-color); color: white; border: none; border-radius: 4px;">🗑️ Supprimer</button>` : ''}
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('userCount').textContent = users.filter(u => u.active).length;
+        }
+
+        function deleteUser(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+            pendingAction = () => {
+                users = users.filter(u => u.id !== userId);
+                saveUsers();
+                systemLogs.push({ timestamp: new Date().toISOString(), user: currentUser.username, action: 'USER_DELETED', details: `Utilisateur ${user.username} supprimé` });
+                showNotification(`✅ Utilisateur ${user.username} supprimé`);
+                updateUsersList(); updateAdminStats();
+            };
+            showAdminConfirmation(`Supprimer ${user.username} ?`, `Action irréversible.`);
+        }
+
+        function showAdminConfirmation(title, message) {
+            document.getElementById('adminModalText').innerHTML = `<strong>${title}</strong><br>${message}`;
+            document.getElementById('adminModal').style.display = 'flex';
+            document.getElementById('adminCodeInput').focus();
+        }
+
+        function confirmAdminAction() {
+            if (document.getElementById('adminCodeInput').value === ADMIN_CODE && pendingAction) {
+                pendingAction(); cancelAdminAction();
+            } else {
+                showNotification('❌ Code admin incorrect', 'error');
+            }
+        }
+
+        function cancelAdminAction() {
+            document.getElementById('adminModal').style.display = 'none';
+            document.getElementById('adminCodeInput').value = '';
+            pendingAction = null;
+        }
+
+        function updateAdminStats() {
+            if (!currentUser || currentUser.role !== 'super_admin') return;
+            document.getElementById('userCount').textContent = users.filter(u => u.active).length;
+        }
+
+        function updateHistory() {
+            const container = document.getElementById('declarationsList');
+            if (declarations.length === 0) {
+                container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-light);"><div style="font-size: 48px; margin-bottom: 15px;">📋</div><p>Aucune déclaration CAMCIS</p></div>`;
+                return;
+            }
+            container.innerHTML = declarations.map(decl => `
+                <div style="background: var(--light-bg); padding: 15px; border-radius: 10px; margin-bottom: 15px; border-left: 4px solid var(--primary-color);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <strong>${decl.designation}</strong>
+                        <span style="font-size: 12px; color: var(--text-light);">${decl.date} ${decl.time}</span>
+                    </div>
+                    <div style="font-size: 14px; color: var(--text-light); margin-bottom: 5px;">
+                        📋 Code SH: <strong>${decl.codeSH}</strong> (DD: ${decl.ddRate}%)<br>
+                        💰 Valeur: ${decl.valeur} • Qté: ${decl.quantite}<br>
+                        🌍 Origine: ${decl.origine || 'Non spécifié'}
+                    </div>
+                    <div style="font-size: 16px; font-weight: bold; color: var(--success-color);">Total: ${decl.total.toLocaleString()} FCFA</div>
+                </div>
+            `).join('');
+        }
+
+        function exportData() {
+            if (declarations.length === 0) {
+                showNotification('⚠️ Aucune donnée à exporter', 'error');
+                return;
+            }
+            const csvContent = "data:text/csv;charset=utf-8,Date,Designation,Code SH,Valeur,Origine,Total FCFA\n" +
+                declarations.map(d => `"${d.date}","${d.designation}","${d.codeSH}","${d.valeur}","${d.origine}","${d.total}"`).join('\n');
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", "bise_declarations_" + new Date().toISOString().split('T')[0] + ".csv");
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            showNotification('📊 Données exportées !');
+        }
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = 'notification show' + (type === 'error' ? ' error' : '');
+            setTimeout(() => notification.classList.remove('show'), 3000);
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message; errorDiv.style.display = 'block';
+            setTimeout(() => errorDiv.style.display = 'none', 5000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUsers(); loadDeclarations(); document.getElementById('username').focus();
+            setInterval(updateSessionTimer, 1000);
+            document.getElementById('adminCodeInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') confirmAdminAction();
+            });
+        });
+
+        window.addEventListener('beforeunload', function(e) {
+            if (currentUser && document.getElementById('appContainer').style.display !== 'none') {
+                e.preventDefault(); e.returnValue = 'Vous allez perdre votre session. Êtes-vous sûr ?';
+            }
+        });
+    </script>
+</body>
+</html>" class="content hidden">
+            <div class="card">
+                <h2 class="card-title" style="color: #d4af37;"><span>👑</span>Panel Super Admin</h2>
+            </div>
+            <div class="card">
+                <h3 class="card-title"><span>➕</span>Créer Utilisateur</h3>
+                <form id="createUserForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">👤 Nom d'utilisateur</label>
+                            <input type="text" id="newUsername" class="form-input" placeholder="MartinDupont" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">🔑 Mot de passe</label>
+                            <input type="password" id="newPassword" class="form-input" placeholder="Mot de passe" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">📝 Nom complet</label>
+                        <input type="text" id="newFullName" class="form-input" placeholder="Martin Dupont">
+                    </div>
+                    <button type="submit" class="btn" style="background: var(--success-color);"><span>➕</span>Créer</button>
+                </form>
+            </div>
+            <div class="card">
+                <h3 class="card-title"><span>👥</span>Utilisateurs (<span id="userCount">1</span>)</h3>
+                <div id="usersList">
+                    <div style="background: var(--light-bg); padding: 15px; border-radius: 10px; border-left: 4px solid var(--accent-color);">
+                        <div><strong>Ekanga29 👑</strong></div>
+                        <div style="font-size: 12px; color: var(--text-light);">Super Administrateur • 🟢 En ligne</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="aadmin
+</html>
